@@ -2,7 +2,9 @@ module GerryChain
 using JSON
 using HDF5
 using SparseArrays
-using LightGraphs
+using Graphs
+using SimpleWeightedGraphs
+# using LightGraphs
 using Random
 using DataStructures
 using Statistics

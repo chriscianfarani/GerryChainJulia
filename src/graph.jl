@@ -8,8 +8,9 @@ struct BaseGraph <: AbstractGraph
     adj_matrix::SparseMatrixCSC{Int,Int}
     edge_src::Array{Int,1}                # of length(num_edges)
     edge_dst::Array{Int,1}                # of length(num_edges)
+    edge_weights::Array{Float64,1}            # of length(num_edges)
     neighbors::Array{Array{Int64,1},1}
-    simple_graph::SimpleGraph              # the base SimpleGraph, if we need it
+    simple_graph::SimpleWeightedGraph              # the base SimpleWeightedGraph, if we need it
     attributes::Array{Dict{String,Any}}
 end
 
@@ -138,7 +139,7 @@ function graph_from_shp(
     graph = simple_graph_from_polygons(node_polys, node_mbrs, adjacency)
 
     # edge `i` would connect nodes edge_src[i] and edge_dst[i]
-    edge_src, edge_dst = edges_from_graph(graph)
+    edge_src, edge_dst, weights = edges_from_graph(graph)
     # each entry in adj_matrix is the edge id that connects the two nodes
     adj_matrix = adjacency_matrix_from_graph(graph)
     neighbors = neighbors_from_graph(graph)
@@ -154,6 +155,7 @@ function graph_from_shp(
         adj_matrix,
         edge_src,
         edge_dst,
+        edge_weights,
         neighbors,
         graph,
         attributes,
@@ -161,32 +163,34 @@ function graph_from_shp(
 end
 
 """
-    edges_from_graph(graph::SimpleGraph)
+    edges_from_graph(graph::SimpleWeightedGraph)
 
 Extract edges from graph. Returns two arrays; the first contains the
 indices of the source nodes and the second contains the indices
 of the destination nodes.
 """
-function edges_from_graph(graph::SimpleGraph)
+function edges_from_graph(graph::SimpleWeightedGraph)
     num_edges = ne(graph)
 
     # edge `i` would connect nodes edge_src[i] and edge_dst[i]
     edge_src = zeros(Int, num_edges)
     edge_dst = zeros(Int, num_edges)
+    weights = zeros(Float64, num_edges)
 
     for (index, edge) in enumerate(edges(graph))
         edge_src[index] = src(edge)
         edge_dst[index] = dst(edge)
+        weights[index] = weight(edge)
     end
-    return edge_src, edge_dst
+    return edge_src, edge_dst, weights
 end
 
 """
-    adjacency_matrix_from_graph(graph::SimpleGraph)
+    adjacency_matrix_from_graph(graph::SimpleWeightedGraph)
 
 Extract sparse adjacency matrix from graph.
 """
-function adjacency_matrix_from_graph(graph::SimpleGraph)
+function adjacency_matrix_from_graph(graph::SimpleWeightedGraph)
     # each entry in adj_matrix is the edge id that connects the two nodes.
     num_nodes = nv(graph)
     adj_matrix = spzeros(Int, num_nodes, num_nodes)
@@ -198,11 +202,11 @@ function adjacency_matrix_from_graph(graph::SimpleGraph)
 end
 
 """
-    neighbors_from_graph(graph::SimpleGraph)
+    neighbors_from_graph(graph::SimpleWeightedGraph)
 
 Extract each node's neighbors from graph.
 """
-function neighbors_from_graph(graph::SimpleGraph)
+function neighbors_from_graph(graph::SimpleWeightedGraph)
     # each entry in adj_matrix is the edge id that connects the two nodes.
     neighbors = [Int[] for n = 1:nv(graph)]
     for (index, edge) in enumerate(edges(graph))
@@ -240,12 +244,12 @@ function graph_from_json(filepath::AbstractString, pop_col::AbstractString)::Bas
     populations = get_attribute_by_key(nodes, pop_col, population_to_int)
     total_pop = sum(populations)
 
-    # Generate the base SimpleGraph.
-    simple_graph = SimpleGraph(num_nodes)
+    # Generate the base SimpleWeightedGraph.
+    simple_graph = SimpleWeightedGraph(num_nodes)
     for (index, edges) in enumerate(raw_graph["adjacency"])
         for edge in edges
             if edge["id"] + 1 > index
-                add_edge!(simple_graph, index, edge["id"] + 1)
+                add_edge!(simple_graph, index, edge["id"] + 1, edge["shared_perim"])
             end
         end
     end
@@ -253,7 +257,7 @@ function graph_from_json(filepath::AbstractString, pop_col::AbstractString)::Bas
     num_edges = ne(simple_graph)
 
     # edge `i` would connect nodes edge_src[i] and edge_dst[i]
-    edge_src, edge_dst = edges_from_graph(simple_graph)
+    edge_src, edge_dst, weights = edges_from_graph(simple_graph)
     # each entry in adj_matrix is the edge id that connects the two nodes
     adj_matrix = adjacency_matrix_from_graph(simple_graph)
     neighbors = neighbors_from_graph(simple_graph)
@@ -269,6 +273,7 @@ function graph_from_json(filepath::AbstractString, pop_col::AbstractString)::Bas
         adj_matrix,
         edge_src,
         edge_dst,
+        edge_weights,
         neighbors,
         simple_graph,
         attributes,

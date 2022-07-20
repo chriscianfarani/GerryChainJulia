@@ -99,7 +99,7 @@ function simple_graph_from_polygons(
     polygons::Array{Array{LibGEOS.Polygon,1},1},
     minimum_bounding_rects::Array{Tuple{Array{Float64,1},Array{Float64,1}},1},
     adjacency::String = "rook",
-)::SimpleGraph
+)::SimpleWeightedGraph
     """ Constructs a simple graph from polygons and the associated minimum
         bounding rectangles.
 
@@ -128,7 +128,7 @@ function simple_graph_from_polygons(
         )
     end
     adjacency_fn = adjacency == "queen" ? queen_intersection : rook_intersection
-    graph = SimpleGraph(length(polygons))
+    graph = SimpleWeightedGraph(length(polygons))
     rtree = create_rtree(minimum_bounding_rects)
 
     for (i, p) in enumerate(polygons)
@@ -139,9 +139,9 @@ function simple_graph_from_polygons(
         for c_idx in candidate_idxs
             # no self loops
             if c_idx != i &&
-               !has_edge(graph, i, c_idx) &&
-               adjacent(p, polygons[c_idx], adjacency_fn)
-                add_edge!(graph, i, c_idx)
+                !has_edge(graph, i, c_idx) &&
+                adjacent(p, polygons[c_idx], adjacency_fn)
+                add_edge!(graph, i, c_idx, 1)
             end
         end
     end
