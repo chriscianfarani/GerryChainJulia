@@ -213,6 +213,116 @@ function get_valid_proposal(
 end
 
 """
+    get_balanced_region_aware_proposal(graph::BaseGraph,
+                          mst_edges::BitSet,
+                          mst_nodes::BitSet,
+                          partition::Partition,
+                          pop_constraint::PopulationConstraint,
+                          D₁::Int,
+                          D₂::Int)
+
+Tries to find a balanced cut on the subgraph induced by `mst_edges` and
+`mst_nodes` such that the population is balanced according to
+`pop_constraint`.
+This subgraph was formed by the combination of districts `D₁` and `D₂`.
+"""
+function get_balanced_region_aware_proposal(
+    graph::BaseGraph,
+    mst_edges::BitSet,
+    mst_nodes::BitSet,
+    partition::Partition,
+    pop_constraint::PopulationConstraint,
+    D₁::Int,
+    D₂::Int,
+    mst_weights::Array{Float64,1}
+)
+    mst = build_mst(graph, mst_nodes, mst_edges)
+    subgraph_pop = partition.dist_populations[D₁] + partition.dist_populations[D₂]
+
+    # pre-allocated reusable data structures to reduce number of memory allocations
+    stack = Stack{Int}()
+    component_container = BitSet([])
+
+    sorted_edges = sortperm(mst_weight, rev=true)
+
+    for edge in sorted_edges
+        if edge in mst_edges
+            component₁ = traverse_mst(
+                mst,
+                graph.edge_src[edge],
+                graph.edge_dst[edge],
+                stack,
+                component_container,
+            )
+
+            population₁ = get_subgraph_population(graph, component₁)
+            population₂ = subgraph_pop - population₁
+
+            if satisfy_constraint(pop_constraint, population₁, population₂)
+                component₂ = setdiff(mst_nodes, component₁)
+                proposal =
+                    RecomProposal(D₁, D₂, population₁, population₂, component₁, component₂)
+                return proposal
+            end
+        end
+    end
+    return DummyProposal("Could not find balanced cut.")
+end
+
+"""
+    get_valid_region_weighted_proposal(graph::BaseGraph,
+                       partition::Partition,
+                       pop_constraint::PopulationConstraint,
+                       rng::AbstractRNG,
+                       num_tries::Int=3)
+
+*Returns* a population balanced proposal.
+
+*Arguments:*
+    - graph:          BaseGraph
+    - partition:      Partition
+    - pop_constraint: PopulationConstraint to adhere to
+    - num_tries:      num times to try getting a balanced cut from a subgraph
+                      before giving up
+    - rng:            A random number generator that implements the 
+                      [AbstractRNG type](https://docs.julialang.org/en/v1/stdlib/Random/#Random.AbstractRNG) 
+                      (e.g. `Random.default_rng()` or `MersenneTwister(1234)`)
+"""
+function get_valid_region_weighted_proposal(
+    graph::BaseGraph,
+    partition::Partition,
+    pop_constraint::PopulationConstraint,
+    rng::AbstractRNG,
+    num_tries::Int = 3,
+    region_weights::Array{Float64,1} = [1,1]
+)
+    while true
+        D₁, D₂, sg_edges, sg_nodes = sample_subgraph(graph, partition, rng)
+
+        for _ = 1:num_tries
+            mst_edges, mst_weights = random_region_weighted_mst(graph, sg_edges, collect(sg_nodes), rng, region_weights)
+
+            # see if we can get a population-balanced cut in this mst
+            proposal = get_balanced_region_aware_proposal(
+                graph,
+                mst_edges,
+                sg_nodes,
+                partition,
+                pop_constraint,
+                D₁,
+                D₂,
+                mst_weights
+            )
+
+            if proposal isa RecomProposal
+                return proposal
+            end
+        end
+    end
+end
+
+
+"""
     update_partition!(partition::Partition,
                       graph::BaseGraph,
                       proposal::RecomProposal,
@@ -392,6 +502,160 @@ function recom_chain(
         rng,
         no_self_loops,
         progress_bar,
+    )
+        push!(chain_scores.step_values, score_vals)
+    end
+
+    return chain_scores
+end
+
+"""
+    region_aware_recom_chain_iter(graph::BaseGraph,
+                partition::Partition,
+                pop_constraint::PopulationConstraint,
+                num_steps::Int,
+                scores::Array{S, 1};
+                num_tries::Int=3,
+                acceptance_fn::F=always_accept,
+                rng::AbstractRNG=Random.default_rng(),
+                no_self_loops::Bool=false) where {F<:Function,S<:AbstractScore}
+
+Runs a Markov Chain for `num_steps` steps using ReCom. Returns an iterator
+of `(Partition, score_vals)`. Note that `Partition` is mutable and will change
+in-place with each iteration -- a `deepcopy()` is needed if you wish to interact 
+with the `Partition` object outside of the for loop.
+
+*Arguments:*
+- graph:            `BaseGraph`
+- partition:        `Partition` with the plan information
+- pop_constraint:   `PopulationConstraint`
+- num_steps:        Number of steps to run the chain for
+- scores:           Array of `AbstractScore`s to capture at each step
+- num_tries:        num times to try getting a balanced cut from a subgraph
+                    before giving up
+- acceptance_fn:    A function generating a probability in [0, 1]
+                    representing the likelihood of accepting the
+                    proposal. Should accept a `Partition` as input.
+- rng:              Random number generator. The user can pass in their
+                    own; otherwise, we use the default RNG from Random. Must
+                    implement the [AbstractRNG type](https://docs.julialang.org/en/v1/stdlib/Random/#Random.AbstractRNG) 
+                    (e.g. `Random.default_rng()` or `MersenneTwister(1234)`).
+- no\\_self\\_loops: If this is true, then a failure to accept a new state
+                    is not considered a self-loop; rather, the chain
+                    simply generates new proposals until the acceptance
+                    function is satisfied. BEWARE - this can create
+                    infinite loops if the acceptance function is never
+                    satisfied!
+- progress_bar      If this is true, a progress bar will be printed to stdout.
+"""
+function region_aware_recom_chain_iter end # this is a workaround (https://github.com/BenLauwens/ResumableFunctions.jl/issues/45)
+@resumable function region_aware_recom_chain_iter(
+    graph::BaseGraph,
+    partition::Partition,
+    pop_constraint::PopulationConstraint,
+    num_steps::Int,
+    scores::Array{S,1};
+    num_tries::Int = 3,
+    acceptance_fn::F = always_accept,
+    rng::AbstractRNG = Random.default_rng(),
+    no_self_loops::Bool = false,
+    progress_bar = true,
+    region_weights::Array{Float64,1} = [1,1],
+) where {F<:Function,S<:AbstractScore}
+    if progress_bar
+        iter = ProgressBar(1:num_steps)
+    else
+        iter = 1:num_steps
+    end
+
+    for steps_taken in iter
+        step_completed = false
+        while !step_completed
+            proposal = get_valid_region_weighted_proposal(graph, partition, pop_constraint, rng, num_tries, region_weights)
+            custom_acceptance = acceptance_fn !== always_accept
+            update_partition!(partition, graph, proposal, custom_acceptance)
+            if custom_acceptance && !satisfies_acceptance_fn(partition, acceptance_fn, rng)
+                # go back to the previous partition
+                partition = partition.parent
+                # if user specifies this behavior, we do not increment the steps
+                # taken if the acceptance function fails.
+                if no_self_loops
+                    continue
+                end
+            end
+            score_vals = score_partition_from_proposal(graph, partition, proposal, scores)
+            @yield partition, score_vals
+            step_completed = true
+        end
+    end
+end
+
+"""
+    region_aware_recom_chain(graph::BaseGraph,
+                partition::Partition,
+                pop_constraint::PopulationConstraint,
+                num_steps::Int,
+                scores::Array{S, 1};
+                num_tries::Int=3,
+                acceptance_fn::F=always_accept,
+                rng::AbstractRNG=Random.default_rng(),
+                no_self_loops::Bool=false)::ChainScoreData where {F<:Function, S<:AbstractScore}
+
+Runs a Markov Chain for `num_steps` steps using ReCom. Returns a `ChainScoreData`
+object which can be queried to retrieve the values of every score at each
+step of the chain.
+
+*Arguments:*
+- graph:            `BaseGraph`
+- partition:        `Partition` with the plan information
+- pop_constraint:   `PopulationConstraint`
+- num_steps:        Number of steps to run the chain for
+- scores:           Array of `AbstractScore`s to capture at each step
+- num_tries:        num times to try getting a balanced cut from a subgraph
+                    before giving up
+- acceptance_fn:    A function generating a probability in [0, 1]
+                    representing the likelihood of accepting the
+                    proposal. Should accept a `Partition` as input.
+- rng:              Random number generator. The user can pass in their
+                    own; otherwise, we use the default RNG from Random. Must
+                    implement the [AbstractRNG type](https://docs.julialang.org/en/v1/stdlib/Random/#Random.AbstractRNG)
+                    (e.g. `Random.default_rng()` or `MersenneTwister(1234)`).
+- no\\_self\\_loops: If this is true, then a failure to accept a new state
+                    is not considered a self-loop; rather, the chain
+                    simply generates new proposals until the acceptance
+                    function is satisfied. BEWARE - this can create
+                    infinite loops if the acceptance function is never
+                    satisfied!
+- progress_bar      If this is true, a progress bar will be printed to stdout.
+"""
+function region_aware_recom_chain(
+    graph::BaseGraph,
+    partition::Partition,
+    pop_constraint::PopulationConstraint,
+    num_steps::Int,
+    scores::Array{S,1};
+    num_tries::Int = 3,
+    acceptance_fn::F = always_accept,
+    rng::AbstractRNG = Random.default_rng(),
+    no_self_loops::Bool = false,
+    progress_bar = true,
+    region_weights::Array{Float64,1} = [1,1],
+)::ChainScoreData where {F<:Function,S<:AbstractScore}
+    first_scores = score_initial_partition(graph, partition, scores)
+    chain_scores = ChainScoreData(deepcopy(scores), [first_scores])
+
+    for (_, score_vals) in region_aware_recom_chain_iter(
+        graph,
+        partition,
+        pop_constraint,
+        num_steps,
+        scores;
+        num_tries,
+        acceptance_fn,
+        rng,
+        no_self_loops,
+        progress_bar,
+        region_weights
     )
         push!(chain_scores.step_values, score_vals)
     end

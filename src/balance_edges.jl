@@ -78,3 +78,45 @@ function random_kruskal_mst(
     weights = rand(rng, length(edges))
     return kruskal_mst(graph, edges, nodes, weights)
 end
+
+"""
+    random_region_weighted_mst(graph::BaseGraph,
+                       edges::Array{Int, 1},
+                       nodes::Array{Int, 1},
+                       rng::AbstractRNG=Random.default_rng())
+
+Generates and returns a random minimum spanning tree from the subgraph induced
+by `edges` and `nodes`, using Kruskal's MST algorithm.
+
+## Note:
+The `graph` represents the entire graph of the plan, where as `edges` and
+`nodes` represent only the sub-graph on which we want to draw the MST.
+
+*Arguments:*
+- graph: Underlying Graph object
+- edges: Array of edges of the sub-graph
+- nodes: Set of nodes of the sub-graph
+- rng: A random number generator that implements the [AbstractRNG type](https://docs.julialang.org/en/v1/stdlib/Random/#Random.AbstractRNG) (e.g. `Random.default_rng()` or `MersenneTwister(1234)`)
+- region_weights: Array of 2 weights: 1st is the weight for counties, second is the weight for places
+
+*Returns* a BitSet of edges that form a mst.
+"""
+function random_region_weighted_mst(
+    graph::BaseGraph,
+    edges::Array{Int,1},
+    nodes::Array{Int,1},
+    rng::AbstractRNG = Random.default_rng(),
+    region_weights::Array{Float64,1} = [0, 0],
+)::BitSet
+    weights = zeros(length(edges))
+    for edge ∈ edges
+        if graph.attributes[graph.edge_src[edge]]["COUNTYFP10"] ≂̸ graph.attributes[graph.edge_dst[edge]]["COUNTYFP10"]
+            weights[edge] += region_weights[1]
+        end
+        if graph.attributes[graph.edge_src[edge]]["PLACE"] ≂̸ graph.attributes[graph.edge_dst[edge]]["PLACE"]
+            weights[edge] += region_weights[2]
+        end
+        weights[edge] += rand(rng())
+    end
+    return (kruskal_mst(graph, edges, nodes, weights), weights)
+end

@@ -46,6 +46,8 @@ export AbstractGraph,
     update_partition!,
     recom_chain,
     recom_chain_iter,
+    region_aware_recom_chain,
+    region_aware_recom_chain_iter,
 
     # flip
     flip_chain,
