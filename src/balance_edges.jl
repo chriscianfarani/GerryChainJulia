@@ -86,7 +86,9 @@ end
                        rng::AbstractRNG=Random.default_rng())
 
 Generates and returns a random minimum spanning tree from the subgraph induced
-by `edges` and `nodes`, using Kruskal's MST algorithm.
+by `edges` and `nodes`, using Kruskal's MST algorithm. The weight associated
+with each edge reflects the number of regional boundaries that are crossed
+by that edge
 
 ## Note:
 The `graph` represents the entire graph of the plan, where as `edges` and

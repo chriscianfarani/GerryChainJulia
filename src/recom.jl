@@ -276,7 +276,7 @@ end
                        rng::AbstractRNG,
                        num_tries::Int=3)
 
-*Returns* a population balanced proposal.
+*Returns* a population balanced proposal, taking into account region weighting.
 
 *Arguments:*
     - graph:          BaseGraph
