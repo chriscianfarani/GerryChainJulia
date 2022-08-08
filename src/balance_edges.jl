@@ -110,10 +110,10 @@ function random_region_weighted_mst(
 )::BitSet
     weights = zeros(length(edges))
     for edge ∈ edges
-        if graph.attributes[graph.edge_src[edge]]["COUNTYFP10"] ≂̸ graph.attributes[graph.edge_dst[edge]]["COUNTYFP10"]
+        if graph.attributes[graph.edge_src[edge]]["COUNTYFP10"] != graph.attributes[graph.edge_dst[edge]]["COUNTYFP10"]
             weights[edge] += region_weights[1]
         end
-        if graph.attributes[graph.edge_src[edge]]["PLACE"] ≂̸ graph.attributes[graph.edge_dst[edge]]["PLACE"]
+        if graph.attributes[graph.edge_src[edge]]["PLACE"] != graph.attributes[graph.edge_dst[edge]]["PLACE"]
             weights[edge] += region_weights[2]
         end
         weights[edge] += rand(rng())
