@@ -294,7 +294,7 @@ function get_valid_region_weighted_proposal(
     pop_constraint::PopulationConstraint,
     rng::AbstractRNG,
     num_tries::Int = 3,
-    region_weights::Array{Float64,1} = [1,1]
+    region_weights::Array{Float64,1} = [1.,1.]
 )
     while true
         D₁, D₂, sg_edges, sg_nodes = sample_subgraph(graph, partition, rng)
@@ -560,7 +560,7 @@ function region_aware_recom_chain_iter end # this is a workaround (https://githu
     rng::AbstractRNG = Random.default_rng(),
     no_self_loops::Bool = false,
     progress_bar = true,
-    region_weights::Array{Float64,1} = [1,1],
+    region_weights::Array{Float64,1} = [1.,1.],
 ) where {F<:Function,S<:AbstractScore}
     if progress_bar
         iter = ProgressBar(1:num_steps)
@@ -639,7 +639,7 @@ function region_aware_recom_chain(
     rng::AbstractRNG = Random.default_rng(),
     no_self_loops::Bool = false,
     progress_bar = true,
-    region_weights::Array{Float64,1} = [1,1],
+    region_weights::Array{Float64,1} = [1.,1.],
 )::ChainScoreData where {F<:Function,S<:AbstractScore}
     first_scores = score_initial_partition(graph, partition, scores)
     chain_scores = ChainScoreData(deepcopy(scores), [first_scores])

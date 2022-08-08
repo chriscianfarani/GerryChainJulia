@@ -106,7 +106,7 @@ function random_region_weighted_mst(
     edges::Array{Int,1},
     nodes::Array{Int,1},
     rng::AbstractRNG = Random.default_rng(),
-    region_weights::Array{Float64,1} = [0, 0],
+    region_weights::Array{Float64,1} = [1., 1.],
 )::BitSet
     weights = zeros(length(edges))
     for edge ∈ edges
