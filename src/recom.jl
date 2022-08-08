@@ -243,7 +243,7 @@ function get_balanced_region_aware_proposal(
     stack = Stack{Int}()
     component_container = BitSet([])
 
-    sorted_edges = sortperm(mst_weight, rev=true)
+    sorted_edges = sortperm(mst_weights, rev=true)
 
     for edge in sorted_edges
         if edge in mst_edges

@@ -109,7 +109,7 @@ function random_region_weighted_mst(
     nodes::Array{Int,1},
     rng::AbstractRNG = Random.default_rng(),
     region_weights::Array{Float64,1} = [1., 1.],
-)::BitSet
+)::Tuple{BitSet, Vector{Float64}}
     weights = rand(rng,length(edges))
     for edge ∈ 1:length(edges)
         if graph.attributes[graph.edge_src[edges[edge]]]["COUNTYFP10"] != graph.attributes[graph.edge_dst[edges[edge]]]["COUNTYFP10"]
