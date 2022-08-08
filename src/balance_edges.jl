@@ -108,7 +108,7 @@ function random_region_weighted_mst(
     rng::AbstractRNG = Random.default_rng(),
     region_weights::Array{Float64,1} = [1., 1.],
 )::BitSet
-    weights = zeros(length(edges))
+    weights = rand(rng,length(edges))
     for edge ∈ 1:length(edges)
         if graph.attributes[graph.edge_src[edges[edge]]]["COUNTYFP10"] != graph.attributes[graph.edge_dst[edges[edge]]]["COUNTYFP10"]
             weights[edge] += region_weights[1]
@@ -116,7 +116,6 @@ function random_region_weighted_mst(
         if graph.attributes[graph.edge_src[edge]]["PLACE"] != graph.attributes[graph.edge_dst[edge]]["PLACE"]
             weights[edge] += region_weights[2]
         end
-        weights[edge] += rand(rng())
     end
     return (kruskal_mst(graph, edges, nodes, weights), weights)
 end
