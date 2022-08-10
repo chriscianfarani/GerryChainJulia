@@ -245,25 +245,23 @@ function get_balanced_region_aware_proposal(
 
     sorted_edges = sortperm(mst_weights, rev=true)
 
-    for edge in sorted_edges
-        if edge in mst_edges
-            component₁ = traverse_mst(
-                mst,
-                graph.edge_src[edge],
-                graph.edge_dst[edge],
-                stack,
-                component_container,
-            )
+    for edge in mst_edges[sorted_edges]
+        component₁ = traverse_mst(
+            mst,
+            graph.edge_src[edge],
+            graph.edge_dst[edge],
+            stack,
+            component_container,
+        )
 
-            population₁ = get_subgraph_population(graph, component₁)
-            population₂ = subgraph_pop - population₁
+        population₁ = get_subgraph_population(graph, component₁)
+        population₂ = subgraph_pop - population₁
 
-            if satisfy_constraint(pop_constraint, population₁, population₂)
-                component₂ = setdiff(mst_nodes, component₁)
-                proposal =
-                    RecomProposal(D₁, D₂, population₁, population₂, component₁, component₂)
-                return proposal
-            end
+        if satisfy_constraint(pop_constraint, population₁, population₂)
+            component₂ = setdiff(mst_nodes, component₁)
+            proposal =
+                RecomProposal(D₁, D₂, population₁, population₂, component₁, component₂)
+            return proposal
         end
     end
     return DummyProposal("Could not find balanced cut.")
