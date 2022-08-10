@@ -162,7 +162,7 @@ function random_region_weighted_mst(
     nodes::Array{Int,1},
     rng::AbstractRNG = Random.default_rng(),
     region_weights::Array{Tuple{String, Float64},1} = [("COUNTYFP10", 1.0), ("PLACE", 1.0)],
-)::Tuple{BitSet, Vector{Float64}}
+)::Tuple{BitSet, Dict{Int,Float64}}
     weights = rand(rng,length(edges))
     for edge ∈ 1:length(edges)
         for (region, weight) ∈ region_weights
