@@ -234,7 +234,7 @@ function get_balanced_region_aware_proposal(
     pop_constraint::PopulationConstraint,
     D₁::Int,
     D₂::Int,
-    mst_weights::Array{Float64,1}
+    mst_weights::Dict{Int,Float64}
 )
     mst = build_mst(graph, mst_nodes, mst_edges)
     subgraph_pop = partition.dist_populations[D₁] + partition.dist_populations[D₂]
@@ -243,9 +243,9 @@ function get_balanced_region_aware_proposal(
     stack = Stack{Int}()
     component_container = BitSet([])
 
-    sorted_edges = sortperm(mst_weights, rev=true)
+    # sorted_edges = sortperm(mst_weights, rev=true)
 
-    for edge in collect(mst_edges)[sorted_edges]
+    for (edge,weight) in sort(collect(mst_weights), by=x->x[2])
         component₁ = traverse_mst(
             mst,
             graph.edge_src[edge],
