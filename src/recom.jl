@@ -245,7 +245,7 @@ function get_balanced_region_aware_proposal(
 
     sorted_edges = sortperm(mst_weights, rev=true)
 
-    for edge in mst_edges[sorted_edges]
+    for edge in collect(mst_edges)[sorted_edges]
         component₁ = traverse_mst(
             mst,
             graph.edge_src[edge],
