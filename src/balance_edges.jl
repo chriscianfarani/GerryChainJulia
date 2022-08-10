@@ -80,7 +80,7 @@ function random_kruskal_mst(
 end
 
 """
-    kruskal_mst(graph::BaseGraph,
+    region_weighted_kruskal_mst(graph::BaseGraph,
                 edges::Array{Int, 1},
                 nodes::Array{Int, 1},
                 weights::Array{Float64, 1})::BitSet
@@ -171,5 +171,5 @@ function random_region_weighted_mst(
             end
         end
     end
-    return kruskal_mst(graph, edges, nodes, weights)
+    return region_weighted_kruskal_mst(graph, edges, nodes, weights)
 end
