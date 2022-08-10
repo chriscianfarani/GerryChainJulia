@@ -108,15 +108,14 @@ function random_region_weighted_mst(
     edges::Array{Int,1},
     nodes::Array{Int,1},
     rng::AbstractRNG = Random.default_rng(),
-    region_weights::Array{Float64,1} = [1., 1.],
+    region_weights::Array{Tuple{String, Float64},1} = [("COUNTYFP10", 1.0), ("PLACE", 1.0)],
 )::Tuple{BitSet, Vector{Float64}}
     weights = rand(rng,length(edges))
     for edge ∈ 1:length(edges)
-        if graph.attributes[graph.edge_src[edges[edge]]]["COUNTYFP10"] != graph.attributes[graph.edge_dst[edges[edge]]]["COUNTYFP10"]
-            weights[edge] += region_weights[1]
-        end
-        if graph.attributes[graph.edge_src[edge]]["PLACE"] != graph.attributes[graph.edge_dst[edge]]["PLACE"]
-            weights[edge] += region_weights[2]
+        for (region, weight) ∈ region_weights
+            if graph.attributes[graph.edge_src[edges[edge]]][region] != graph.attributes[graph.edge_dst[edges[edge]]][region]
+                weights[edge] += weight
+            end
         end
     end
     return (kruskal_mst(graph, edges, nodes, weights), weights)
