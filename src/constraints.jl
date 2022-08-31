@@ -81,11 +81,12 @@ values are closer to satisfying the constraint than the old population
 values.
 """
 function satisfy_constraint(constraint::PopulationConstraint, D₁_pop_old::Int, D₁_pop_new::Int, D₂_pop_old::Int, D₂_pop_new::Int)
+    ideal_pop = (constraint.min_pop + constraint.max_pop) / 2
     if D₁_pop_new >= constraint.min_pop && D₁_pop_new <= constraint.max_pop
         if D₂_pop_new >= constraint.min_pop && D₂_pop_new <= constraint.max_pop
             return true
         end
-    elseif D₁_pop_old < constraint.min_pop || D₁_pop_old > constraint.max_pop || D₂_pop_old < constraint.min_pop || D₂_pop_old > constraint.max_pop
+    elseif (D₁_pop_new < ideal_pop && D₂_pop_new > ideal_pop) || (D₁_pop_new > ideal_pop && D₂_pop_new < ideal_pop)
         new_difference = abs(D₁_pop_new - D₂_pop_new)
         old_difference = abs(D₁_pop_old - D₂_pop_old)
         if new_difference < old_difference
