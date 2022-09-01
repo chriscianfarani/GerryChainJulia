@@ -86,10 +86,14 @@ function satisfy_constraint(constraint::PopulationConstraint, D₁_pop_old::Int,
         if D₂_pop_new >= constraint.min_pop && D₂_pop_new <= constraint.max_pop
             return true
         end
-    elseif (D₁_pop_new < ideal_pop && D₂_pop_new > ideal_pop) || (D₁_pop_new > ideal_pop && D₂_pop_new < ideal_pop)
-        new_difference = abs(D₁_pop_new - D₂_pop_new)
-        old_difference = abs(D₁_pop_old - D₂_pop_old)
-        if new_difference < old_difference
+    # elseif (D₁_pop_new < ideal_pop && D₂_pop_new > ideal_pop) || (D₁_pop_new > ideal_pop && D₂_pop_new < ideal_pop)
+    #     new_difference = abs(D₁_pop_new - D₂_pop_new)
+    #     old_difference = abs(D₁_pop_old - D₂_pop_old)
+    #     if new_difference < old_difference
+    #         return true
+    #     end
+    elseif abs(D₁_pop_new - ideal_pop) < abs(D₁_pop_old - ideal_pop)
+        if abs(D₂_pop_new - ideal_pop) < abs(D₂_pop_old - ideal_pop)
             return true
         end
     end
