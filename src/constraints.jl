@@ -80,12 +80,8 @@ If they don't, the proposal will still be accepted if the new population
 values are closer to satisfying the constraint than the old population 
 values.
 """
-function satisfy_constraint(constraint::PopulationConstraint, D₁_pop_old::Int, D₁_pop_new::Int, D₂_pop_old::Int, D₂_pop_new::Int)
+function satisfy_constraint(constraint::PopulationConstraint, D₁_pop_new::Int, D₂_pop_new::Int, D₁_pop_old::Int, D₂_pop_old::Int)
     ideal_pop = (constraint.min_pop + constraint.max_pop) / 2
-    min_new = min(D₁_pop_new, D₂_pop_new)
-    max_new = max(D₁_pop_new, D₂_pop_new)
-    min_old = min(D₁_pop_old, D₂_pop_old)
-    max_old = max(D₁_pop_old, D₂_pop_old)
     if D₁_pop_new >= constraint.min_pop && D₁_pop_new <= constraint.max_pop
         if D₂_pop_new >= constraint.min_pop && D₂_pop_new <= constraint.max_pop
             return true
