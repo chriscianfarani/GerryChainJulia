@@ -152,7 +152,7 @@ function get_balanced_proposal(
         population₁ = get_subgraph_population(graph, component₁)
         population₂ = subgraph_pop - population₁
 
-        if satisfy_constraint(pop_constraint, population₁, population₂)
+        if satisfy_constraint(pop_constraint, population₁, population₂, partition.dist_populations[D₁], partition.dist_populations[D₂])
             component₂ = setdiff(mst_nodes, component₁)
             proposal =
                 RecomProposal(D₁, D₂, population₁, population₂, component₁, component₂)

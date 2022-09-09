@@ -69,6 +69,30 @@ function satisfy_constraint(constraint::PopulationConstraint, D₁_pop::Int, D�
 end
 
 """
+    satisfy_constraint(constraint::PopulationConstraint,
+                       D₁_pop_old::Int,
+                       D₁_pop_new::Int,
+                       D₂_pop_old::Int,
+                       D₂_pop_new::Int)
+
+Test whether two new population counts satisfy a PopulationConstraint.
+If they don't, the proposal will still be accepted if the new population
+values are closer to satisfying the constraint than the old population
+values.
+"""
+function satisfy_constraint(constraint::PopulationConstraint, D₁_pop_new::Int, D₂_pop_new::Int, D₁_pop_old::Int, D₂_pop_old::Int)
+    ideal_pop = (constraint.min_pop + constraint.max_pop) / 2
+    if D₁_pop_new >= constraint.min_pop && D₁_pop_new <= constraint.max_pop
+        if D₂_pop_new >= constraint.min_pop && D₂_pop_new <= constraint.max_pop
+            return true
+        end
+    elseif abs(D₁_pop_new - ideal_pop) + abs(D₂_pop_new - ideal_pop) < abs(D₁_pop_old - ideal_pop) + abs(D₂_pop_old - ideal_pop)
+        return true
+    end
+    return false
+end
+
+"""
     satisfy_constraint(constraint::ContiguityConstraint,
                        graph::BaseGraph,
                        partition::Partition,
