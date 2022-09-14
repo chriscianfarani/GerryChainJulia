@@ -14,6 +14,7 @@ import LibGEOS
 import LibSpatialIndex
 using Logging
 using ResumableFunctions
+using StatsBase
 
 export AbstractGraph,
     BaseGraph,
