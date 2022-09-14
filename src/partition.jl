@@ -181,8 +181,8 @@ function sample_adjacent_districts_randomly(partition::Partition, rng::AbstractR
     weight_vector = [(v > max_pop) || (v < min_pop) ? log(abs(v - ideal_pop)) : 1.0 for v in partition.dist_populations]
     weight_vector = Weights(weight_vector)
     while true
-        D₁ = sample(rng, weights)
-        D₂ = sample(rng, weights)
+        D₁ = sample(rng, weight_vector)
+        D₂ = sample(rng, weight_vector)
         if partition.dist_adj[D₁, D₂] != 0
             return D₁, D₂
         end
