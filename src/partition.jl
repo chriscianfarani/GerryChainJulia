@@ -178,10 +178,11 @@ Randomly sample two adjacent districts and return them.
 """
 function sample_adjacent_districts_randomly(partition::Partition, rng::AbstractRNG, min_pop::Int, max_pop::Int)
     ideal_pop = (max_pop + min_pop) / 2
-    weights = [(v > max_pop) || (v < min_pop) ? log(abs(v - ideal_pop)) : 1.0 for v in partition.dist_populations]
+    weight_vector = [(v > max_pop) || (v < min_pop) ? log(abs(v - ideal_pop)) : 1.0 for v in partition.dist_populations]
+    weight_vector = Weights(weight_vector)
     while true
-        D₁ = sample(rng, 1:partition.num_dists, weights)
-        D₂ = sample(rng, 1:partition.num_dists, weights)
+        D₁ = sample(rng, weights)
+        D₂ = sample(rng, weights)
         if partition.dist_adj[D₁, D₂] != 0
             return D₁, D₂
         end
