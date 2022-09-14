@@ -178,7 +178,7 @@ Randomly sample two adjacent districts and return them.
 """
 function sample_adjacent_districts_randomly(partition::Partition, rng::AbstractRNG, min_pop::Int, max_pop::Int)
     ideal_pop = (max_pop + min_pop) / 2
-    weights = [(v > max_pop) || (v < min_pop) ? log(abs(v - ideal_pop)) : 1.0 for v in parition.dist_populations]
+    weights = [(v > max_pop) || (v < min_pop) ? log(abs(v - ideal_pop)) : 1.0 for v in partition.dist_populations]
     while true
         D₁ = sample(rng, 1:partition.num_dists, weights)
         D₂ = sample(rng, 1:partition.num_dists, weights)
