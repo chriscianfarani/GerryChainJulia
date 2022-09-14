@@ -9,7 +9,7 @@ Randomly sample two adjacent districts D₁ and D₂ and return a tuple
 containing the Int edges and Int nodes of the induced subgraph.
 """
 function sample_subgraph(graph::BaseGraph, partition::Partition, rng::AbstractRNG, pop_constraint::PopulationConstraint)
-    D₁, D₂ = sample_adjacent_districts_randomly(partition, rng, pop_constraint)
+    D₁, D₂ = sample_adjacent_districts_randomly(partition, rng, pop_constraint.min_pop, pop_constraint.max_pop)
 
     # take all their nodes
     nodes = union(partition.dist_nodes[D₁], partition.dist_nodes[D₂])
