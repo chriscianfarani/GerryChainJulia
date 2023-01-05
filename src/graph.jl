@@ -38,7 +38,7 @@ end
 *Returns* an Array of Dictionaries. Each dictionary corresponds to one
 node in the graph.
 """
-function all_node_properties(table::Shapefile.Table)::Array{Dict{String,Any}}
+function all_node_properties(table::Union{Shapefile.Table, DataFrame})::Array{Dict{String,Any}}
     properties = propertynames(table) # returns array of symbols
     string_keys = String.(properties) # convert by broadcasting
 
@@ -130,6 +130,43 @@ function graph_from_shp(
     table = read_table(filepath)
 
     attributes = all_node_properties(table)
+    coords = get_node_coordinates.(table)
+    # these will be used in the adjacency method
+    node_polys = polygon_array.(coords)
+    node_mbrs = min_bounding_rect.(coords)
+
+    graph = simple_graph_from_polygons(node_polys, node_mbrs, adjacency)
+
+    # edge `i` would connect nodes edge_src[i] and edge_dst[i]
+    edge_src, edge_dst = edges_from_graph(graph)
+    # each entry in adj_matrix is the edge id that connects the two nodes
+    adj_matrix = adjacency_matrix_from_graph(graph)
+    neighbors = neighbors_from_graph(graph)
+
+    populations = get_attribute_by_key(attributes, pop_col, population_to_int)
+    total_pop = sum(populations)
+
+    return BaseGraph(
+        nv(graph),
+        ne(graph),
+        total_pop,
+        populations,
+        adj_matrix,
+        edge_src,
+        edge_dst,
+        neighbors,
+        graph,
+        attributes,
+    )
+end
+
+function graph_from_table(
+    table::Shapefile.Table,
+    attribute_table::DataFrame,
+    pop_col::AbstractString,
+    adjacency::String = "rook",
+)::BaseGraph
+    attributes = all_node_properties(attribute_table)
     coords = get_node_coordinates.(table)
     # these will be used in the adjacency method
     node_polys = polygon_array.(coords)
@@ -310,6 +347,15 @@ function BaseGraph(
             ),
         )
     end
+end
+
+function BaseGraph(
+        table::Shapefile.Table, 
+        attribute_table::DataFrame,
+        pop_col::AbstractString; 
+        adjacency::String = "rook",
+)::BaseGraph
+    return graph_from_table(table, attribute_table, pop_col, adjacency)
 end
 
 """

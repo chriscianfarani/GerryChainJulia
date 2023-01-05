@@ -15,6 +15,7 @@ import LibSpatialIndex
 using Logging
 using ResumableFunctions
 using StatsBase
+using DataFrames
 
 export AbstractGraph,
     BaseGraph,
