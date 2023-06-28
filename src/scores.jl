@@ -650,6 +650,7 @@ function save_scores_to_csv(
     filename::String,
     chain_data::ChainScoreData,
     score_names::Array{String,1} = String[],
+    save_every::Int = 1,
 )
     open(filename, "w") do f
         if isempty(score_names) # by default, export all scores from chain
@@ -692,7 +693,7 @@ function save_scores_to_csv(
 
         # iterate through all steps of chain
         query = ChainScoreQuery(score_names, chain_data)
-        for step_values in query
+        for (row_num,step_values) in enumerate(query)
             row_values = []
             for key in score_names
                 if haskey(nested_keys, key)
@@ -703,7 +704,9 @@ function save_scores_to_csv(
                 end
             end
             # write one row for every state of the chain
-            writedlm(f, hcat(row_values...), ',')
+            if row_num % save_every == 0
+                writedlm(f, hcat(row_values...), ',')
+            end
         end
     end
 end
