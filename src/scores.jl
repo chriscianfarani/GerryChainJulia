@@ -642,7 +642,8 @@ end
 """
     save_scores_to_csv(filename::String,
                        chain_data::ChainScoreData,
-                       score_names::Array{String,1}=String[])
+                       score_names::Array{String,1}=String[]),
+                       save_every::Int=1)
 
 Save the `scores` in a CSV file named `filename`.
 """

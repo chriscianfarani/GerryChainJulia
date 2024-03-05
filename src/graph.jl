@@ -38,7 +38,7 @@ end
 *Returns* an Array of Dictionaries. Each dictionary corresponds to one
 node in the graph.
 """
-function all_node_properties(table::Union{Shapefile.Table, DataFrame})::Array{Dict{String,Any}}
+function all_node_properties(table::Shapefile.Table)::Array{Dict{String,Any}}
     properties = propertynames(table) # returns array of symbols
     string_keys = String.(properties) # convert by broadcasting
 
@@ -49,6 +49,24 @@ function all_node_properties(table::Union{Shapefile.Table, DataFrame})::Array{Di
     end
 
     return get_node_properties.(table)
+end
+
+function all_node_properties(table::DataFrame)::Array{Dict{String,Any}}
+    properties = propertynames(table) # returns array of symbols
+    string_keys = String.(properties) # convert by broadcasting
+
+    # internal function because we want to use both properties and values
+    function get_node_properties(row::DataFrameRow)
+        values = map(p -> getproperty(row, p), properties)
+        return Dict(string_keys .=> values)
+    end
+
+    arr = Array{Dict{String,Any}}(undef, nrow(table))
+    for i in 1:nrow(table)
+        arr[i] = get_node_properties(table[i,:])
+    end
+
+    return arr
 end
 
 
