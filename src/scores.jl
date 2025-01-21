@@ -149,8 +149,12 @@ function Base.iterate(query::ChainScoreQuery, state::Tuple)
     # update the dictionary of values to reflect districts changed in
     # the next state
     curr_scores = chain_data.step_values[step]
-    (D₁, D₂) = chain_data.step_values[step]["dists"]
-    update_dictionary!(score_vals, curr_scores, D₁, D₂)
+    if haskey(chain_data.step_values[step], "dists")
+        (D₁, D₂) = chain_data.step_values[step]["dists"]
+        update_dictionary!(score_vals, curr_scores, D₁, D₂)
+    else 
+        update_dictionary!(score_vals, curr_scores)
+    end
     return score_vals, (step + 1, deepcopy(score_vals))
 end
 
@@ -434,6 +438,27 @@ function update_dictionary!(
             original[key][D₁] = update[key][1]
             original[key][D₂] = update[key][2]
         elseif update[key] isa Dict # composite score
+            update_dictionary!(original[key], update[key], D₁, D₂)
+        else
+            original[key] = update[key]
+        end
+    end
+end
+
+"""
+    update_dictionary!(original::Dict{String, Any},
+                        update::Dict{String, Any})
+
+Modifies a Dict in-place by merging it with another Dict that contains
+`update` to the former Dict. Used when all dists are updated, rather than
+just two.
+"""
+function update_dictionary!(
+    original::Dict{String,Any},
+    update::Dict{String,Any},
+)
+    for key in keys(original)
+        if update[key] isa Dict # composite score
             update_dictionary!(original[key], update[key], D₁, D₂)
         else
             original[key] = update[key]
